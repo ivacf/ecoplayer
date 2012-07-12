@@ -1,6 +1,5 @@
 package com.example.musictest;
 
-import com.ecoplayer.beta.R;
 
 public class Song {
 

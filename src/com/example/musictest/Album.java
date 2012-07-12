@@ -2,7 +2,6 @@ package com.example.musictest;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import com.ecoplayer.beta.R;
 
 public class Album implements Parcelable {
 

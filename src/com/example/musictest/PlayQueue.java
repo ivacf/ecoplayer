@@ -1,7 +1,6 @@
 package com.example.musictest;
 
-import android.annotation.SuppressLint;
-import com.ecoplayer.beta.R;
+
 import java.util.Collection;
 import java.util.Vector;
 
