@@ -1,0 +1,11 @@
+<resources>
+
+    <style name="AppTheme" parent="android:Theme.Holo">
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+    
+    <style name="subItemText">
+        <item name="android:textColor">@color/blue_ics</item>
+    </style>
+
+</resources>

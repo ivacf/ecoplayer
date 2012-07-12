@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Author     : Ivan Carballo Fernandez (ivacf1@gmail.com)
+    Project	   :
+    License	   : Copyright (C) 2012 Ivan Carballo.
+    Date       : 31-03-2012
+-->
+<!-- Layout for each songs -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:gravity="left|center" >
+
+    <TextView
+        android:id="@+id/textView_leftBox"
+        android:layout_width="20dp"
+        android:layout_height="fill_parent"
+        android:layout_gravity="center_vertical|center_horizontal|center"
+        android:background="@color/dim_grey"
+        android:gravity="center_vertical|center_horizontal" />
+
+    <LinearLayout
+        android:layout_width="0dip"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingBottom="12dp"
+        android:paddingLeft="15dp"
+        android:paddingRight="5dp"
+        android:paddingTop="12dp" >
+
+        <TextView
+            android:id="@+id/textView_song"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left"
+            android:textColor="@color/blue_ics"
+            android:lines="1"
+            android:textSize="20dp" />
+    </LinearLayout>
+
+</LinearLayout>
