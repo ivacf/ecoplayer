@@ -1,7 +1,15 @@
-package com.example.musictest;
+/*
+ * Author:	Ivan Carballo Fernandez (icf1e11@soton.ac.uk) 
+ * Project:	EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+ * Date:	13-07-2012
+ * License: Copyright (C) 2012 Ivan Carballo. 
+ */
+package com.ecoplayer.beta;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,8 +17,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
-import com.ecoplayer.beta.R;
 
+//ArrayAdapter for managing songs inside a ListView
 public class SongsArrayAdapter extends ArrayAdapter<Song> {
 
 	public SongsArrayAdapter(Context context, int textViewResourceId) {
@@ -37,6 +45,7 @@ public class SongsArrayAdapter extends ArrayAdapter<Song> {
 		return v;
 	}
 
+	//Returns a collection from the intems insde the ArrayAdapter.
 	public Collection<Song> getCollection() {
 		int size = getCount();
 		ArrayList<Song> list = new ArrayList<Song>(size);

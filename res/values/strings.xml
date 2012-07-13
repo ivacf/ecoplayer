@@ -1,6 +1,12 @@
+<!--
+    Author     : Ivan Carballo Fernandez (icf1e11@soton.ac.uk)
+    Project	   : EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+    License	   : Copyright (C) 2012 Ivan Carballo.
+    Date       : 13-07-2012
+-->
 <resources>
 
-    <string name="app_name">MusicTest</string>
+    <string name="app_name">EcoPlayer</string>
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_main">MusicTest</string>

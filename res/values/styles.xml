@@ -1,6 +1,15 @@
+<!--
+    Author     : Ivan Carballo Fernandez (icf1e11@soton.ac.uk)
+    Project	   : EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+    License	   : Copyright (C) 2012 Ivan Carballo.
+    Date       : 13-07-2012
+-->
 <resources>
 
     <style name="AppTheme" parent="android:Theme.Holo">
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+      <style name="AppThemeNoActionBar" parent="android:Theme.Holo.NoActionBar">
         <item name="android:textColor">@android:color/white</item>
     </style>
     

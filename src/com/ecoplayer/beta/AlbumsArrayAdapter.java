@@ -1,4 +1,12 @@
-package com.example.musictest;
+/*
+ * Author:	Ivan Carballo Fernandez (icf1e11@soton.ac.uk) 
+ * Project:	EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+ * Date:	13-07-2012
+ * License: Copyright (C) 2012 Ivan Carballo. 
+ */
+package com.ecoplayer.beta;
+
+
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -6,9 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
-import com.ecoplayer.beta.R;
 
-
+//Array Adapter for managing Albums inside a ListView
 public class AlbumsArrayAdapter extends ArrayAdapter<Album>{
 
 	public AlbumsArrayAdapter(Context context, int textViewResourceId) {

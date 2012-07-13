@@ -1,12 +1,20 @@
-package com.example.musictest;
+/*
+ * Author:	Ivan Carballo Fernandez (icf1e11@soton.ac.uk) 
+ * Project:	EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+ * Date:	13-07-2012
+ * License: Copyright (C) 2012 Ivan Carballo. 
+ */
+package com.ecoplayer.beta;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
+//Representation of a music album
 public class Album implements Parcelable {
 
 	private String title = null;
 	private String artist = null;
+	//Key of the album that uniquely identify it
 	private String key = null;
 	private int numSongs = 0;
 

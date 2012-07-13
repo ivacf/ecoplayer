@@ -1,12 +1,19 @@
-package com.example.musictest;
+/*
+ * Author:	Ivan Carballo Fernandez (icf1e11@soton.ac.uk) 
+ * Project:	EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+ * Date:	13-07-2012
+ * License: Copyright (C) 2012 Ivan Carballo. 
+ */
+package com.ecoplayer.beta;
 
-
+//Represents a Song
 public class Song {
 
 	private String title = null;
+	//Unique ID of the song inside the system. 
 	private int id = 0;
-	private Album album = null;
-	private boolean isPlaying = false;
+	//Album to which the song belongs
+	private Album album = null; 
 
 	public Song(int id, String title, Album album) {
 		this.title = title;
@@ -28,14 +35,6 @@ public class Song {
 
 	public void setId(int id) {
 		this.id = id;
-	}
-
-	public boolean isPlaying() {
-		return isPlaying;
-	}
-
-	public void setPlaying(boolean isPlaying) {
-		this.isPlaying = isPlaying;
 	}
 
 	public Album getAlbum() {

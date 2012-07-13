@@ -1,3 +1,9 @@
+<!--
+    Author     : Ivan Carballo Fernandez (icf1e11@soton.ac.uk)
+    Project	   : EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+    License	   : Copyright (C) 2012 Ivan Carballo.
+    Date       : 13-07-2012
+-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ecoplayer.beta"
     android:versionCode="1"
@@ -14,7 +20,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.example.musictest.ActivityList"
+            android:name=".ActivityAlbums"
             android:label="@string/title_activity_main" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,12 +29,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.example.musictest.AlbumSongsActivity"
+            android:name=".AlbumSongsActivity"
+            android:theme="@style/AppThemeNoActionBar"
             android:label="@string/title_activity_main" >
         </activity>
 
         <service
-            android:name="com.example.musictest.MusicService"
+            android:name=".MusicService"
             android:exported="false" >
         </service>
     </application>

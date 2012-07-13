@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Author     : Ivan Carballo Fernandez (icf1e11@soton.ac.uk)
+    Project	   : EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+    License	   : Copyright (C) 2012 Ivan Carballo.
+    Date       : 13-07-2012
+
+-->
+<!-- Selector for showing button effect when pressing play,stop, etc. buttons -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true"
+          android:drawable="@color/blue_ics" /> <!-- pressed -->
+    <item android:drawable="@android:color/transparent" /> <!-- default -->
+</selector>
