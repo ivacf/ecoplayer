@@ -20,18 +20,14 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".ActivityAlbums"
+            android:name=".MainActivity"
+            android:launchMode="singleTask"
             android:label="@string/title_activity_main" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".AlbumSongsActivity"
-            android:theme="@style/AppThemeNoActionBar"
-            android:label="@string/title_activity_main" >
         </activity>
 
         <service

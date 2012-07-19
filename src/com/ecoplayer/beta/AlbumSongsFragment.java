@@ -11,70 +11,72 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 
-/*This activity shows a list of songs given a album that is expected to be received inside the intent. 
- * It loads a ButtonsFragment when there are some song inside the play queue.
+/*This fragment shows a list of songs given a album that is expected to be set before adding the fragment. 
  * When a song is clicked it adds the whole album to the play queue and starts the MusicService. */
-public class AlbumSongsActivity extends FragmentActivity {
-	public static final String EXTRA_ALBUM = "extraalbum";
-	private TextView textViewLeftBox = null;
-	private TextView textViewAlbum = null;
-	private TextView textViewArtist = null;
+public class AlbumSongsFragment extends Fragment {
+
 	private SongsArrayAdapter songsArrayAdap = null;
 	private ListView listView = null;
 	private ContentResolver contentResolver = null;
 	private Album album = null;
 	private PlayQueue playQueue = null;
-	private FragmentManager fragmentManager = null;
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		// Inflate the view for the fragment
+		return inflater.inflate(R.layout.songs_album_frag, container, false);
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		album = (Album) getIntent().getExtras().getParcelable(EXTRA_ALBUM);
-		setContentView(R.layout.album_songs);
 		playQueue = PlayQueue.getInstance();
-		contentResolver = getContentResolver();
-		listView = (ListView) findViewById(R.id.listView);
-		textViewLeftBox = (TextView) findViewById(R.id.textView_leftBox);
-		textViewAlbum = (TextView) findViewById(R.id.textView_album);
-		textViewArtist = (TextView) findViewById(R.id.textView_artist);
-		textViewAlbum.setText(album.getTitle());
-		textViewArtist.setText(album.getArtist());
-		songsArrayAdap = new SongsArrayAdapter(this, android.R.layout.simple_list_item_1);
+	}
+
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		listView = (ListView) getView().findViewById(R.id.listView_songs);
+		songsArrayAdap = new SongsArrayAdapter(getActivity(), android.R.layout.simple_list_item_1);
 		listView.setAdapter(songsArrayAdap);
 		listView.setOnItemClickListener(songSelectedListener);
-		fragmentManager = getSupportFragmentManager();
-		loadSongsOfAlbum();
+		contentResolver = getActivity().getContentResolver();
+	}
 
+	void setAlbum(Album album) {
+		this.album = album;
 	}
 
 	@Override
-	protected void onResume() {
+	public void onResume() {
 		super.onResume();
-		addButtonsFragmentIfNotEmpty();
+		loadSongsOfAlbum();
 	}
 
-	//Load all the songs from a given album inside the ListView. 
+	// Load all the songs from a given album inside the ListView.
 	private void loadSongsOfAlbum() {
 		if (album != null) {
 			if (contentResolver != null) {
+				if (songsArrayAdap != null)
+					songsArrayAdap.clear();
 				Cursor cursor = contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, new String[] {
 						MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media._ID }, MediaStore.Audio.Media.ALBUM_KEY
 						+ " LIKE ?", new String[] { album.getKey() }, MediaStore.Audio.Media.TITLE + " ASC");
 				if (cursor == null) {
-					Log.e(this.getLocalClassName(), "Error querying songs for album '" + album.getTitle()
+					Log.e(getActivity().getLocalClassName(), "Error querying songs for album '" + album.getTitle()
 							+ "', cursor is null");
 				} else if (!cursor.moveToFirst()) {
-					Log.i(this.getLocalClassName(), "There aren't songs in the device for album " + album.getTitle());
+					Log.i(getActivity().getLocalClassName(),
+							"There aren't songs in the device for album " + album.getTitle());
 					cursor.close();
 				} else {
 					int songTitleColumn = cursor.getColumnIndex(android.provider.MediaStore.Audio.Media.TITLE);
@@ -90,18 +92,8 @@ public class AlbumSongsActivity extends FragmentActivity {
 					cursor.close();
 				}
 			}
-		}
-	}
-
-	//Add the button fragment if the play queue is not empty
-	private void addButtonsFragmentIfNotEmpty() {
-		if (!playQueue.isEmpty()) {
-			if (fragmentManager.findFragmentById(R.id.fragment_container_songs) == null) {
-				FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-				ButtonsFragment fragmentButtons = new ButtonsFragment();
-				fragmentTransaction.add(R.id.fragment_container_songs, fragmentButtons);
-				fragmentTransaction.commit();
-			}
+		} else {
+			Log.e(getActivity().getLocalClassName(), "The album object is null");
 		}
 	}
 
@@ -109,13 +101,14 @@ public class AlbumSongsActivity extends FragmentActivity {
 		// Invoked when some item of the ListView is clicked
 		public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
 			if (parent.equals(listView)) {
-				//Add all songs and start playing the one in the idex=position
+				// Add all songs and start playing the one in the idex=position
 				playQueue.addAllSongs(songsArrayAdap.getCollection(), position);
-				//Start music service
-				Intent intent = new Intent(AlbumSongsActivity.this, MusicService.class);
+				// Start music service
+				Intent intent = new Intent(AlbumSongsFragment.this.getActivity(), MusicService.class);
 				intent.setAction(MusicService.ACTION_NEXT);
-				startService(intent);
-				addButtonsFragmentIfNotEmpty();
+				MainActivity mainActivity = (MainActivity) AlbumSongsFragment.this.getActivity();
+				mainActivity.startService(intent);
+				mainActivity.addButtonsFragmentIfNotEmpty();
 			}
 		}
 	};

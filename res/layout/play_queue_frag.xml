@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Author     : Ivan Carballo Fernandez (icf1e11@soton.ac.uk)
+    Project	   : EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+    License	   : Copyright (C) 2012 Ivan Carballo.
+    Date       : 13-07-2012
+-->
+<!-- layout for fragment that shows the songs in the play queue -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <ListView
+        android:id="@+id/listView_songsQueue"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+</LinearLayout>

@@ -23,12 +23,12 @@ public class PlayQueue {
 		playQueue = new Vector<Song>();
 	}
 
-	public boolean isEmpty() {
+	public synchronized boolean isEmpty() {
 		return playQueue.isEmpty();
 	}
 
 	// Singleton
-	public static PlayQueue getInstance() {
+	public synchronized static PlayQueue getInstance() {
 		if (singleton == null) {
 			singleton = new PlayQueue();
 		}
@@ -36,7 +36,7 @@ public class PlayQueue {
 	}
 
 	// Add a song to play right now and clear the queue.
-	public void addSong(Song song) {
+	public synchronized void addSong(Song song) {
 		if (song != null) {
 			clear();
 			playQueue.add(song);
@@ -44,7 +44,7 @@ public class PlayQueue {
 	}
 
 	// Add a song to the end of the queue
-	public void addSongQueue(Song song) {
+	public synchronized void addSongQueue(Song song) {
 		if (song != null) {
 			;
 			playQueue.add(song);
@@ -52,14 +52,14 @@ public class PlayQueue {
 	}
 
 	// Clear the queue
-	public void clear() {
+	public synchronized void clear() {
 		playQueue.clear();
 		index = INITIAL_INDEX;
 	}
 
 	// Add several songs and clear the queue, the second parameter is the index
 	// of the song that should be played first.
-	public void addAllSongs(Collection<Song> songs, int startingPosition) {
+	public synchronized void addAllSongs(Collection<Song> songs, int startingPosition) {
 		if (!songs.isEmpty()) {
 			clear();
 			playQueue.addAll(songs);
@@ -69,15 +69,16 @@ public class PlayQueue {
 				index = startingPosition - 1;
 		}
 	}
-	
-	//Add several songs to the end of the queue.
-	public void addAllSongsQueue(Collection<Song> songs) {
+
+	// Add several songs to the end of the queue.
+	public synchronized void addAllSongsQueue(Collection<Song> songs) {
 		if (!songs.isEmpty()) {
 			playQueue.addAll(songs);
 		}
 	}
 
-	//Get the next song in the play queue, if the current is the last go back to the first. 
+	// Get the next song in the play queue, if the current is the last go back
+	// to the first.
 	public Song getNext() {
 		if (!playQueue.isEmpty()) {
 			synchronized (this) {
@@ -88,7 +89,8 @@ public class PlayQueue {
 		return null;
 	}
 
-	//Get the previous song in the play queue, if current is the first it returns the it again.
+	// Get the previous song in the play queue, if current is the first it
+	// returns the it again.
 	public Song getPrevious() {
 		if (!playQueue.isEmpty()) {
 			synchronized (this) {
@@ -99,7 +101,7 @@ public class PlayQueue {
 		return null;
 	}
 
-	//Get current song in the play queue 
+	// Get current song in the play queue
 	public Song getCurrent() {
 		if (!playQueue.isEmpty()) {
 			if (index >= 0) {
@@ -111,28 +113,43 @@ public class PlayQueue {
 		return null;
 	}
 
-	//Increments index by 1  that represent the position of the current song
+	// Increments index by 1 that represent the position of the current song
 	private void incrementIndex() {
 		if (index < playQueue.size() - 1)
 			index++;
 		else
 			index = 0;
 	}
-	
-	//Decrement index by 1 that represent the position of the current song
+
+	// Decrement index by 1 that represent the position of the current song
 	private void decrementIndex() {
 		if (index > 0)
 			index--;
 	}
 
-	//Return true if the Music Player is playing any song
+	// Return true if the Music Player is playing any song
 	public synchronized boolean isPlaying() {
 		return isPlaying;
 	}
 
-	//Set the isPlaying flag
+	// Set the isPlaying flag
 	public synchronized void setPlaying(boolean isPlaying) {
 		this.isPlaying = isPlaying;
+	}
+
+	public Collection<Song> getCollection() {
+		return playQueue;
+	}
+
+	// Move current song to the one at index=index
+	public synchronized boolean moveToSongAt(int index) {
+		// Index can be -1, it means that there is not current song and the next
+		// one will be the fist of the list
+		if (index >= -1 && index < playQueue.size()) {
+			this.index = index;
+			return true;
+		}
+		return false;
 	}
 
 }

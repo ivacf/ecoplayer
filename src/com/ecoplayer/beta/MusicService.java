@@ -32,18 +32,21 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	public static final String ACTION_PAUSE = "com.example.musictest.PAUSE";
 	public static final String ACTION_NEXT = "com.example.musictest.NEXT";
 	public static final String ACTION_PREVIOUS = "com.example.musictest.PREVIOUS";
-	//If the previous song button is pressed before the song has been played for longer than MIN_TIME_GOING_PREVIOUS 
-	//the player will move to the previous song instead of starting again the current one. 
+	// If the previous song button is pressed before the song has been played
+	// for longer than MIN_TIME_GOING_PREVIOUS
+	// the player will move to the previous song instead of starting again the
+	// current one.
 	public static final int MIN_TIME_GOING_PREVIOUS = 1500; // mill, so 1.5s
 	private static final String LOG_TAG = "MusicService";
 	public static int NOTIFICATION_ID = 1337;
 	private MediaPlayer mMediaPlayer = null;
 	private NotificationCompat.Builder notiBuilder;
 	private PlayQueue playQueue = null;
-	//True if the MediaPlayer has been initialised but not prepared
+	// True if the MediaPlayer has been initialised but not prepared
 	private boolean isMediaPlayerInit = false;
-	//True if the MediaPlayer is paused. 
+	// True if the MediaPlayer is paused.
 	private boolean isMediaPlayerPaused = false;
+	private boolean isPausedBecauseOfButton = false;
 	private NotificationManager mNotificationManager;
 
 	@Override
@@ -53,13 +56,13 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 				.setContentTitle(getResources().getString(R.string.app_name)).setContentIntent(buildPendingIntent())
 				.setContentText(getResources().getString(R.string.tap_to_play));
 		mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		startForeground(NOTIFICATION_ID, notiBuilder.getNotification());
 		isMediaPlayerInit = initMediaPlayer();
 		super.onCreate();
 	}
 
-	//This method initialize the Media Player
+	// This method initialize the Media Player
 	private boolean initMediaPlayer() {
+		startForeground(NOTIFICATION_ID, notiBuilder.getNotification());
 		AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
 		int result = audioManager.requestAudioFocus(audioFocusChangeList, AudioManager.STREAM_MUSIC,
 				AudioManager.AUDIOFOCUS_GAIN);
@@ -77,8 +80,10 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 		return false;
 	}
 
-	//Send message to Activity, if the first parameter is true it means the player has change from palying to
-	//paused or vice versa. If the second is true it means that a new song is starting to be payed. 
+	// Send message to Activity, if the first parameter is true it means the
+	// player has change from palying to
+	// paused or vice versa. If the second is true it means that a new song is
+	// starting to be payed.
 	private void sendMusicUpdateToActivity(boolean playerStateChanged, boolean song_changed) {
 		Intent intentMusicUpdate = new Intent(MUSIC_UPDATE);
 		intentMusicUpdate.putExtra(PLAYER_STATE_CHANGED, playerStateChanged);
@@ -86,7 +91,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 		sendBroadcast(intentMusicUpdate);
 	}
 
-	//Play a given song. This method is async. 
+	// Play a given song. This method is async.
 	private boolean playSong(Song song) {
 		if (song != null) {
 			if (isMediaPlayerInit) {
@@ -120,7 +125,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 		return START_STICKY;
 	}
 
-	//Handle the commands received from the Activities. 
+	// Handle the commands received from the Activities.
 	private void handleCommand(Intent intent) {
 		// Play next song in the queue, also use to start with the first song.
 		if (intent.getAction().equals(ACTION_NEXT)) {
@@ -130,11 +135,8 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 			if (isMediaPlayerInit) {
 				if (mMediaPlayer.isPlaying()) {
 					mMediaPlayer.pause();
-					isMediaPlayerPaused = true;
-					playQueue.setPlaying(false);
-					sendMusicUpdateToActivity(true, false);
-					mNotificationManager.notify(NOTIFICATION_ID, notiBuilder.setContentIntent(buildPendingIntent())
-							.setContentText(getResources().getString(R.string.paused)).getNotification());
+					isPausedBecauseOfButton = true;
+					onPause();
 				}
 			}
 			// Start the song after pausing
@@ -143,19 +145,11 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 				if (!playQueue.isEmpty()) {
 					if (isMediaPlayerPaused) {
 						mMediaPlayer.start();
-						isMediaPlayerPaused = false;
+						sendMusicUpdateToActivity(true, false);
+						onPlaying();
 					} else {
 						playSong(playQueue.getCurrent());
 					}
-					playQueue.setPlaying(true);
-					sendMusicUpdateToActivity(true, false);
-					mNotificationManager.notify(
-							NOTIFICATION_ID,
-							notiBuilder
-									.setContentIntent(buildPendingIntent())
-									.setContentText(
-											getResources().getString(R.string.playing) + " "
-													+ playQueue.getCurrent().getTitle()).getNotification());
 				}
 			}
 			// Play the previous song in the play queue.
@@ -168,7 +162,32 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 		}
 	}
 
-	//Returns the URI of a given Song object
+	// Called after starting to play or resuming
+	private void onPlaying() {
+		isMediaPlayerPaused = false;
+		isPausedBecauseOfButton = false;
+		playQueue.setPlaying(true);
+		mNotificationManager.notify(
+				NOTIFICATION_ID,
+				notiBuilder
+						.setContentIntent(buildPendingIntent())
+						.setContentText(
+								getResources().getString(R.string.playing) + " " + playQueue.getCurrent().getTitle())
+						.getNotification());
+	}
+
+	// Called after pausing the music player
+	private void onPause() {
+		isMediaPlayerPaused = true;
+		playQueue.setPlaying(false);
+		sendMusicUpdateToActivity(true, false);
+		mNotificationManager.notify(
+				NOTIFICATION_ID,
+				notiBuilder.setContentIntent(buildPendingIntent())
+						.setContentText(getResources().getString(R.string.paused)).getNotification());
+	}
+
+	// Returns the URI of a given Song object
 	public Uri getUriFromSong(Song song) {
 		return ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.getId());
 	}
@@ -186,15 +205,8 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	/** Called when MediaPlayer is ready */
 	public void onPrepared(MediaPlayer player) {
 		player.start();
-		playQueue.setPlaying(true);
 		sendMusicUpdateToActivity(true, true);
-		mNotificationManager.notify(
-				NOTIFICATION_ID,
-				notiBuilder
-						.setContentIntent(buildPendingIntent())
-						.setContentText(
-								getResources().getString(R.string.playing) + " " + playQueue.getCurrent().getTitle())
-						.getNotification());
+		onPlaying();
 	}
 
 	@Override
@@ -216,21 +228,37 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 		public void onAudioFocusChange(int focusChange) {
 			switch (focusChange) {
 			case AudioManager.AUDIOFOCUS_GAIN:
-				// resume playback
-				if (mMediaPlayer == null)
-					initMediaPlayer();
-				else if (!mMediaPlayer.isPlaying())
-					mMediaPlayer.start();
-				mMediaPlayer.setVolume(1.0f, 1.0f);
+				// If is not paused because the pause button was pressed resume.
+				if (!isPausedBecauseOfButton) {
+					// resume playback
+					if (mMediaPlayer == null)
+						// When focus is gained for first time or is lost for a
+						// long time
+						isMediaPlayerInit = initMediaPlayer();
+					else if (!mMediaPlayer.isPlaying()) {
+						// After losing focus for a short time
+						mMediaPlayer.start();
+						sendMusicUpdateToActivity(true, false);
+						onPlaying();
+					} else {
+						// Back from AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK
+						mMediaPlayer.setVolume(1.0f, 1.0f);
+					}
+				}
 				break;
 
 			case AudioManager.AUDIOFOCUS_LOSS:
 				// Lost focus for an unbounded amount of time: stop playback and
 				// release media player
 				if (mMediaPlayer != null) {
-					if (mMediaPlayer.isPlaying())
+					if (mMediaPlayer.isPlaying()) {
 						mMediaPlayer.stop();
+						sendMusicUpdateToActivity(true, false);
+						onPause();
+					}
+					MusicService.this.stopForeground(true);
 					mMediaPlayer.release();
+					isMediaPlayerInit = false;
 					mMediaPlayer = null;
 				}
 				break;
@@ -240,8 +268,11 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 				// playback. We don't release the media player because playback
 				// is likely to resume
 				if (mMediaPlayer != null) {
-					if (mMediaPlayer.isPlaying())
+					if (mMediaPlayer.isPlaying()) {
 						mMediaPlayer.pause();
+						sendMusicUpdateToActivity(true, false);
+						onPause();
+					}
 				}
 				break;
 
@@ -259,16 +290,10 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	};
 
 	private PendingIntent buildPendingIntent() {
-		Intent intent = null;
+		Intent intent = new Intent(getApplicationContext(), MainActivity.class);
 		if (isMediaPlayerInit) {
-			if (mMediaPlayer.isPlaying()) {
-				intent = new Intent(getApplicationContext(), AlbumSongsActivity.class);
-				intent.putExtra(AlbumSongsActivity.EXTRA_ALBUM, playQueue.getCurrent().getAlbum());
-			} else {
-				intent = new Intent(getApplicationContext(), ActivityAlbums.class);
-			}
-		} else {
-			intent = new Intent(getApplicationContext(), ActivityAlbums.class);
+			if (mMediaPlayer.isPlaying())
+				intent.putExtra(MainActivity.EXTRA_FRAGMENT_ID,MainActivity.FRAGMENT_PLAY_QUEUE);
 		}
 		return PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 	}
