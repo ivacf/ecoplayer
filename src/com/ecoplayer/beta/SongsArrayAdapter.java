@@ -9,8 +9,6 @@ package com.ecoplayer.beta;
 import java.util.ArrayList;
 import java.util.Collection;
 
-
-
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +35,11 @@ public class SongsArrayAdapter extends ArrayAdapter<Song> {
 			TextView textViewLeftBox = (TextView) v.findViewById(R.id.textView_leftBox);
 			TextView textViewSong = (TextView) v.findViewById(R.id.textView_song);
 			if (textViewLeftBox != null) {
+				if (song.isPlaying()) {
+					textViewLeftBox.setBackgroundColor(getContext().getResources().getColor(R.color.blue_ics));
+				}else{
+					textViewLeftBox.setBackgroundColor(getContext().getResources().getColor(R.color.dim_grey));
+				}
 			}
 			if (textViewSong != null) {
 				textViewSong.setText(song.getTitle());
@@ -45,7 +48,7 @@ public class SongsArrayAdapter extends ArrayAdapter<Song> {
 		return v;
 	}
 
-	//Returns a collection from the intems insde the ArrayAdapter.
+	// Returns a collection from the intems insde the ArrayAdapter.
 	public Collection<Song> getCollection() {
 		int size = getCount();
 		ArrayList<Song> list = new ArrayList<Song>(size);

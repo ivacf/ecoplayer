@@ -6,9 +6,8 @@
  */
 package com.ecoplayer.beta;
 
-import android.content.BroadcastReceiver;
+
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -19,7 +18,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 //Fragment that shows the name of the song currently playing and three buttons (previous, play, next). 
-public class ButtonsFragment extends Fragment {
+public class ButtonsFragment extends Fragment implements FragmentEcoPlayer {
 
 	private ImageButton playButton = null;
 	private ImageButton previousButton = null;
@@ -58,7 +57,6 @@ public class ButtonsFragment extends Fragment {
 		if (song != null) {
 			textViewCurrentSong.setText(song.getTitle() + " - " + song.getAlbum().getArtist());
 		}
-		getActivity().registerReceiver(broadcastReceiver, new IntentFilter(MusicService.MUSIC_UPDATE));
 		super.onActivityCreated(savedInstanceState);
 	}
 
@@ -111,31 +109,18 @@ public class ButtonsFragment extends Fragment {
 		}
 	}
 
+	@Override
 	// Runs when a new song is about to play
-	private void onSongChanged() {
+	public void onSongChanged() {
 		Song song = playQueue.getCurrent();
 		textViewCurrentSong.setText(song.getTitle() + " - " + song.getAlbum().getArtist());
-		// Update blue box
+
 	}
 
-	// BroadcastReceiver for managing messages from the Music Service
-	private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-		public void onReceive(android.content.Context context, Intent intent) {
-			boolean songChanged = intent.getBooleanExtra(MusicService.SONG_CHANGED, false);
-			boolean playerStateChanged = intent.getBooleanExtra(MusicService.PLAYER_STATE_CHANGED, false);
-			if (songChanged) {
-				onSongChanged();
-			}
-			if (playerStateChanged) {
-				updatePlayButton();
-			}
+	@Override
+	public void onMusicPlayerStateChanged() {
+		updatePlayButton();
 
-		}
-	};
-
-	public void onDestroy() {
-		getActivity().unregisterReceiver(broadcastReceiver);
-		super.onDestroy();
 	}
 
 }

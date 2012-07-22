@@ -5,7 +5,6 @@
     License	   : Copyright (C) 2012 Ivan Carballo.
     Date       : 13-07-2012
 -->
-<!-- Definition of colors used on the app-->
 <resources>
 
     <color name="shadow_grey">#36393D</color>

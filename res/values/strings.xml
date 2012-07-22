@@ -13,5 +13,10 @@
     <string name="playing">Playing</string>
     <string name="paused">Pause</string>
     <string name="tap_to_play">Tap to play</string>
-
+    <string name="play_queue">Play queue</string>
+    <string name="albums">Albums</string>
+    <string name="contextMenu_addSong">Add to queue</string>
+    <string name="contextMenu_addAlbum">Add album to queue</string>
+    <string name="queue_full">The play queue is full</string>
+ 
 </resources>

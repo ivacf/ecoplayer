@@ -1,5 +1,6 @@
 package com.ecoplayer.beta;
 
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -11,7 +12,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
 
-public class PlayQueueFragment extends Fragment {
+public class PlayQueueFragment extends Fragment implements FragmentEcoPlayer {
 
 	private SongsArrayAdapter songsArrayAdap = null;
 	private ListView listView = null;
@@ -58,8 +59,9 @@ public class PlayQueueFragment extends Fragment {
 		public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
 			if (parent.equals(listView)) {
 				// Move to the song at index=position-1
-				//-1 because we will tell the music service to play the next song. 
-				if (playQueue.moveToSongAt(position-1)) {
+				// -1 because we will tell the music service to play the next
+				// song.
+				if (playQueue.moveToSongAt(position - 1)) {
 					// Start music service
 					Intent intent = new Intent(PlayQueueFragment.this.getActivity(), MusicService.class);
 					intent.setAction(MusicService.ACTION_NEXT);
@@ -71,4 +73,17 @@ public class PlayQueueFragment extends Fragment {
 			}
 		}
 	};
+
+	@Override
+	public void onSongChanged() {
+		if (songsArrayAdap != null)
+			songsArrayAdap.notifyDataSetChanged();
+
+	}
+
+	@Override
+	public void onMusicPlayerStateChanged() {
+		return;
+
+	}
 }

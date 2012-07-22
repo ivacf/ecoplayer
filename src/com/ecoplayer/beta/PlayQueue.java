@@ -14,6 +14,9 @@ public class PlayQueue {
 
 	// Use vector because is synchronized
 	private Vector<Song> playQueue = null;
+	// Max number songs that can be in the play queue. Prevent from bad
+	// performance when play queue is too big
+	public static final int MAX_SONGS_QUEUE = 500;
 	private static PlayQueue singleton;
 	public static final int INITIAL_INDEX = -1;
 	private int index = INITIAL_INDEX;
@@ -44,11 +47,14 @@ public class PlayQueue {
 	}
 
 	// Add a song to the end of the queue
-	public synchronized void addSongQueue(Song song) {
-		if (song != null) {
-			;
-			playQueue.add(song);
+	public synchronized boolean addSongQueue(Song song) {
+		if (playQueue.size() <= MAX_SONGS_QUEUE) {
+			if (song != null) {
+				playQueue.add(song);
+			}
+			return true;
 		}
+		return false;
 	}
 
 	// Clear the queue
@@ -59,22 +65,30 @@ public class PlayQueue {
 
 	// Add several songs and clear the queue, the second parameter is the index
 	// of the song that should be played first.
-	public synchronized void addAllSongs(Collection<Song> songs, int startingPosition) {
+	public synchronized boolean addAllSongs(Collection<Song> songs, int startingPosition) {
 		if (!songs.isEmpty()) {
-			clear();
-			playQueue.addAll(songs);
-			if (startingPosition < playQueue.size() && startingPosition >= 0)
-				// Minus 1 because it'll increment 1 before playing when calling
-				// getNext()
-				index = startingPosition - 1;
+			if (songs.size() <= MAX_SONGS_QUEUE) {
+				clear();
+				playQueue.addAll(songs);
+				if (startingPosition < playQueue.size() && startingPosition >= 0)
+					// Minus 1 because it'll increment 1 before playing when
+					// calling getNext()
+					index = startingPosition - 1;
+				return true;
+			}
 		}
+		return false;
 	}
 
 	// Add several songs to the end of the queue.
-	public synchronized void addAllSongsQueue(Collection<Song> songs) {
+	public synchronized boolean addAllSongsQueue(Collection<Song> songs) {
 		if (!songs.isEmpty()) {
-			playQueue.addAll(songs);
+			if (playQueue.size() + songs.size() <= MAX_SONGS_QUEUE) {
+				playQueue.addAll(songs);
+				return true;
+			}
 		}
+		return false;
 	}
 
 	// Get the next song in the play queue, if the current is the last go back
@@ -150,6 +164,18 @@ public class PlayQueue {
 			return true;
 		}
 		return false;
+	}
+
+	// Return a song given its ID, null if there isn't any song with this ID in
+	// the playQueue.
+	public Song getSongById(int songId) {
+		for (int i = 0; i < playQueue.size(); i++) {
+			Song song = playQueue.get(i);
+			if (song.getId() == songId) {
+				return song;
+			}
+		}
+		return null;
 	}
 
 }

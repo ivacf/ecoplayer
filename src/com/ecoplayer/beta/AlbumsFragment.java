@@ -20,7 +20,7 @@ import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
 
 /*This Fragment shows a list of albums and artists available to play. */
-public class AlbumsFragment extends Fragment {
+public class AlbumsFragment extends Fragment implements FragmentEcoPlayer {
 
 	private ListView listView = null;
 	private AlbumsArrayAdapter albumsArrayAdapter = null;
@@ -92,5 +92,17 @@ public class AlbumsFragment extends Fragment {
 			}
 		}
 	};
+
+	@Override
+	public void onSongChanged() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onMusicPlayerStateChanged() {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

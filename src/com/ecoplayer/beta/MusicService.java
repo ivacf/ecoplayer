@@ -47,6 +47,8 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	// True if the MediaPlayer is paused.
 	private boolean isMediaPlayerPaused = false;
 	private boolean isPausedBecauseOfButton = false;
+	// Reference to the son that is been played
+	private Song songPlaying = null;
 	private NotificationManager mNotificationManager;
 
 	@Override
@@ -85,6 +87,9 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	// paused or vice versa. If the second is true it means that a new song is
 	// starting to be payed.
 	private void sendMusicUpdateToActivity(boolean playerStateChanged, boolean song_changed) {
+		if(song_changed){
+			Log.d("SongBlue","Notified song chaged, current song "+songPlaying.getTitle());
+		}
 		Intent intentMusicUpdate = new Intent(MUSIC_UPDATE);
 		intentMusicUpdate.putExtra(PLAYER_STATE_CHANGED, playerStateChanged);
 		intentMusicUpdate.putExtra(SONG_CHANGED, song_changed);
@@ -93,6 +98,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 
 	// Play a given song. This method is async.
 	private boolean playSong(Song song) {
+		resetSongPlayingRef();
 		if (song != null) {
 			if (isMediaPlayerInit) {
 				mMediaPlayer.reset();
@@ -100,6 +106,9 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 					mMediaPlayer.setDataSource(getApplicationContext(), getUriFromSong(song));
 					// prepare async to not block main thread
 					mMediaPlayer.prepareAsync();
+					songPlaying = song;
+					// Set the flag in the song to playing
+					songPlaying.setPlaying(true);
 					return true;
 				} catch (IllegalArgumentException e) {
 					Log.e(e.getClass().getName(), e.getMessage(), e);
@@ -214,10 +223,23 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 		return null;
 	}
 
+	// Reset the songPlaying var to null
+	private void resetSongPlayingRef() {
+		if (songPlaying != null) {
+			// Set flag false and set reference to the current song to null
+			Log.d("SongBlue","Reseting song "+songPlaying.getTitle());
+			songPlaying.setPlaying(false);
+			songPlaying = null;
+		}
+
+	}
+
 	OnCompletionListener onCompletion = new OnCompletionListener() {
 
 		@Override
 		public void onCompletion(MediaPlayer mp) {
+			resetSongPlayingRef();
+			// Play next
 			playSong(playQueue.getNext());
 		}
 	};
@@ -293,7 +315,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 		Intent intent = new Intent(getApplicationContext(), MainActivity.class);
 		if (isMediaPlayerInit) {
 			if (mMediaPlayer.isPlaying())
-				intent.putExtra(MainActivity.EXTRA_FRAGMENT_ID,MainActivity.FRAGMENT_PLAY_QUEUE);
+				intent.putExtra(MainActivity.EXTRA_FRAGMENT_ID, MainActivity.FRAGMENT_PLAY_QUEUE);
 		}
 		return PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 	}

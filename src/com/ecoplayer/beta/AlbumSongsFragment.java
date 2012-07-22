@@ -13,22 +13,29 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
 
 /*This fragment shows a list of songs given a album that is expected to be set before adding the fragment. 
  * When a song is clicked it adds the whole album to the play queue and starts the MusicService. */
-public class AlbumSongsFragment extends Fragment {
+public class AlbumSongsFragment extends Fragment implements FragmentEcoPlayer {
 
 	private SongsArrayAdapter songsArrayAdap = null;
 	private ListView listView = null;
 	private ContentResolver contentResolver = null;
 	private Album album = null;
 	private PlayQueue playQueue = null;
+	private MainActivity mainActivity = null;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -45,7 +52,9 @@ public class AlbumSongsFragment extends Fragment {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
+		mainActivity = (MainActivity) AlbumSongsFragment.this.getActivity();
 		listView = (ListView) getView().findViewById(R.id.listView_songs);
+		registerForContextMenu(listView);
 		songsArrayAdap = new SongsArrayAdapter(getActivity(), android.R.layout.simple_list_item_1);
 		listView.setAdapter(songsArrayAdap);
 		listView.setOnItemClickListener(songSelectedListener);
@@ -85,7 +94,10 @@ public class AlbumSongsFragment extends Fragment {
 						String songTitle = cursor.getString(songTitleColumn);
 						int id = cursor.getInt(songIdColumn);
 						if (songsArrayAdap != null) {
-							songsArrayAdap.add(new Song(id, songTitle, album));
+							Song song = playQueue.getSongById(id);
+							if (song == null)
+								song = new Song(id, songTitle, album);
+							songsArrayAdap.add(song);
 						}
 					} while (cursor.moveToNext());
 					songsArrayAdap.notifyDataSetChanged();
@@ -97,20 +109,80 @@ public class AlbumSongsFragment extends Fragment {
 		}
 	}
 
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+		// Inflate the context menu for a given song
+		MenuInflater inflater = getActivity().getMenuInflater();
+		inflater.inflate(R.menu.contextmenu_song, menu);
+	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+		switch (item.getItemId()) {
+		case R.id.cm_item_addSongQueue:
+			// Add the song to the end of the queue
+			Song song = songsArrayAdap.getItem(info.position);
+			if (!playQueue.addSongQueue(song)) {
+				// The songs cannot be added to the play list, List too full
+				// or song null;
+				Toast.makeText(AlbumSongsFragment.this.getActivity(), getResources().getString(R.string.queue_full),
+						Toast.LENGTH_LONG).show();
+			}
+			// Add buttons fragment to main activity if the play queue is not
+			// empty
+			mainActivity.addButtonsFragmentIfNotEmpty();
+			return true;
+		case R.id.cm_item_addAlbumQueue:
+			// Add all songs of the album to the end of the queue
+			if (!playQueue.addAllSongsQueue(songsArrayAdap.getCollection())) {
+				// The songs cannot be added to the play list, List too full
+				// or collection adapter empty.
+				Toast.makeText(AlbumSongsFragment.this.getActivity(), getResources().getString(R.string.queue_full),
+						Toast.LENGTH_LONG).show();
+			}
+			// Add buttons fragment to main activity if the play queue is not
+			// empty
+			mainActivity.addButtonsFragmentIfNotEmpty();
+			return true;
+		default:
+			return super.onContextItemSelected(item);
+		}
+	}
+
 	private final OnItemClickListener songSelectedListener = new OnItemClickListener() {
 		// Invoked when some item of the ListView is clicked
 		public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
 			if (parent.equals(listView)) {
-				// Add all songs and start playing the one in the idex=position
-				playQueue.addAllSongs(songsArrayAdap.getCollection(), position);
-				// Start music service
-				Intent intent = new Intent(AlbumSongsFragment.this.getActivity(), MusicService.class);
-				intent.setAction(MusicService.ACTION_NEXT);
-				MainActivity mainActivity = (MainActivity) AlbumSongsFragment.this.getActivity();
-				mainActivity.startService(intent);
-				mainActivity.addButtonsFragmentIfNotEmpty();
+				// Add all songs and start playing the one in the index=position
+				if (playQueue.addAllSongs(songsArrayAdap.getCollection(), position)) {
+					// Start music service
+					Intent intent = new Intent(AlbumSongsFragment.this.getActivity(), MusicService.class);
+					intent.setAction(MusicService.ACTION_NEXT);
+					mainActivity.startService(intent);
+					mainActivity.addButtonsFragmentIfNotEmpty();
+				} else {
+					// The songs cannot be added to the play list, List too full
+					// or array adapter empty.
+					Toast.makeText(AlbumSongsFragment.this.getActivity(),
+							getResources().getString(R.string.queue_full), Toast.LENGTH_LONG).show();
+				}
 			}
 		}
 	};
+
+	@Override
+	public void onSongChanged() {
+		if (songsArrayAdap != null)
+			songsArrayAdap.notifyDataSetChanged();
+
+	}
+
+	@Override
+	public void onMusicPlayerStateChanged() {
+		// TODO Auto-generated method stub
+
+	}
 
 }

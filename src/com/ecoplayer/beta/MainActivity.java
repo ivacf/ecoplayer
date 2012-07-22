@@ -1,6 +1,8 @@
 package com.ecoplayer.beta;
 
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -13,7 +15,7 @@ public class MainActivity extends FragmentActivity {
 	public static final short FRAGMENT_ALBUMS = 344;
 	public static final short FRAGMENT_SONGS_ALBUM = 345;
 	public static final short FRAGMENT_PLAY_QUEUE = 346;
-	//List of valid fragments ids 
+	// List of valid fragments ids
 	public static final short[] listFragmentIds = { FRAGMENT_ALBUMS, FRAGMENT_SONGS_ALBUM, FRAGMENT_PLAY_QUEUE };
 	private short currentFragment = FRAGMENT_ALBUMS;
 	private PlayQueue playQueue = null;
@@ -31,6 +33,8 @@ public class MainActivity extends FragmentActivity {
 		playQueue = PlayQueue.getInstance();
 		fragmentManager = getSupportFragmentManager();
 		short fragmentId = FRAGMENT_ALBUMS;
+		// Register broadcast
+		registerReceiver(broadcastReceiver, new IntentFilter(MusicService.MUSIC_UPDATE));
 		if (arg0 != null) {
 			album = (Album) arg0.getParcelable(EXTRA_ALBUM);
 			fragmentId = arg0.getShort(EXTRA_FRAGMENT_ID);
@@ -99,6 +103,12 @@ public class MainActivity extends FragmentActivity {
 		addButtonsFragmentIfNotEmpty();
 	}
 
+	@Override
+	protected void onDestroy() {
+		unregisterReceiver(broadcastReceiver);
+		super.onDestroy();
+	}
+
 	// Add the new fragment with the play,next and previous buttons, only if the
 	// play queue isn't empty
 	void addButtonsFragmentIfNotEmpty() {
@@ -123,6 +133,7 @@ public class MainActivity extends FragmentActivity {
 			fragmentAlbums = new AlbumsFragment();
 		fragmentTransaction.replace(R.id.fragment_container_lists, fragmentAlbums);
 		fragmentTransaction.commit();
+		setTitle(getResources().getString(R.string.app_name) + " - " + getResources().getString(R.string.albums));
 
 	}
 
@@ -136,6 +147,7 @@ public class MainActivity extends FragmentActivity {
 		fragmentSongsAlbum.setAlbum(album);
 		fragmentTransaction.replace(R.id.fragment_container_lists, fragmentSongsAlbum);
 		fragmentTransaction.commit();
+		setTitle(album.getTitle() + " - " + album.getArtist());
 	}
 
 	// Add a fragment that displays the songs of the play queue
@@ -147,6 +159,31 @@ public class MainActivity extends FragmentActivity {
 			fragmentPlayQueue = new PlayQueueFragment();
 		fragmentTransaction.replace(R.id.fragment_container_lists, fragmentPlayQueue);
 		fragmentTransaction.commit();
+		setTitle(getResources().getString(R.string.play_queue));
 	}
+
+	// BroadcastReceiver for managing messages from the Music Service
+	private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+		public void onReceive(android.content.Context context, Intent intent) {
+			boolean songChanged = intent.getBooleanExtra(MusicService.SONG_CHANGED, false);
+			boolean playerStateChanged = intent.getBooleanExtra(MusicService.PLAYER_STATE_CHANGED, false);
+			FragmentEcoPlayer fragmentButtons = (FragmentEcoPlayer) fragmentManager
+					.findFragmentById(R.id.fragment_container_buttons);
+			FragmentEcoPlayer fragmentList = (FragmentEcoPlayer) fragmentManager
+					.findFragmentById(R.id.fragment_container_lists);
+			if (songChanged) {
+				if (fragmentButtons != null)
+					fragmentButtons.onSongChanged();
+				if (fragmentList != null)
+					fragmentList.onSongChanged();
+			}
+			if (playerStateChanged) {
+				if (fragmentButtons != null)
+					fragmentButtons.onMusicPlayerStateChanged();
+				if (fragmentList != null)
+					fragmentList.onMusicPlayerStateChanged();
+			}
+		}
+	};
 
 }

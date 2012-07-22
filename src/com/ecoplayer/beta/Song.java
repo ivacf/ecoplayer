@@ -10,15 +10,25 @@ package com.ecoplayer.beta;
 public class Song {
 
 	private String title = null;
-	//Unique ID of the song inside the system. 
+	// Unique ID of the song inside the system.
 	private int id = 0;
-	//Album to which the song belongs
-	private Album album = null; 
+	// Album to which the song belongs
+	private Album album = null;
+	// Flag that indicate whether the song is been playing or not.
+	private boolean isPlaying = false;
+
+	public boolean isPlaying() {
+		return isPlaying;
+	}
+
+	public void setPlaying(boolean isPlaying) {
+		this.isPlaying = isPlaying;
+	}
 
 	public Song(int id, String title, Album album) {
 		this.title = title;
 		this.id = id;
-		this.album=album;
+		this.album = album;
 	}
 
 	public String getTitle() {
@@ -44,5 +54,4 @@ public class Song {
 	public void setAlbum(Album album) {
 		this.album = album;
 	}
-
 }
