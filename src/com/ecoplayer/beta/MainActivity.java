@@ -1,3 +1,9 @@
+/*
+ * Author:	Ivan Carballo Fernandez (icf1e11@soton.ac.uk) 
+ * Project:	EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+ * Date:	13-07-2012
+ * License: Copyright (C) 2012 Ivan Carballo. 
+ */
 package com.ecoplayer.beta;
 
 import android.content.BroadcastReceiver;
@@ -7,15 +13,18 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.widget.Toast;
 
+//Main Activity that manages different fragment to build the UI. 
 public class MainActivity extends FragmentActivity {
 
-	public static final String EXTRA_ALBUM = "extraalbum";
-	public static final String EXTRA_FRAGMENT_ID = "fragmentid";
+	public static final String EXTRA_ALBUM = "com.ecoplayer.beta.EXTRA_ALBUM";
+	public static final String EXTRA_FRAGMENT_ID = "com.ecoplayer.beta.EXTRA_FRAGMENT_ID";
+	public static final String EXTRA_ENERGY_MODE_SAVED = "com.ecoplayer.beta.EXTRA_ENERGY_MODE_SAVED";
 	public static final short FRAGMENT_ALBUMS = 344;
 	public static final short FRAGMENT_SONGS_ALBUM = 345;
 	public static final short FRAGMENT_PLAY_QUEUE = 346;
-	// List of valid fragments ids
+	// List of valid fragments IDs
 	public static final short[] listFragmentIds = { FRAGMENT_ALBUMS, FRAGMENT_SONGS_ALBUM, FRAGMENT_PLAY_QUEUE };
 	private short currentFragment = FRAGMENT_ALBUMS;
 	private PlayQueue playQueue = null;
@@ -34,13 +43,21 @@ public class MainActivity extends FragmentActivity {
 		fragmentManager = getSupportFragmentManager();
 		short fragmentId = FRAGMENT_ALBUMS;
 		// Register broadcast
-		registerReceiver(broadcastReceiver, new IntentFilter(MusicService.MUSIC_UPDATE));
+		IntentFilter intentFilter = new IntentFilter(MusicService.MUSIC_UPDATE);
+		intentFilter.addAction(EnergyService.ENERGY_MODE_SET);
+		intentFilter.addAction(EnergyService.ENERGY_STATE_GET);
+		registerReceiver(broadcastReceiver, intentFilter);
 		if (arg0 != null) {
 			album = (Album) arg0.getParcelable(EXTRA_ALBUM);
 			fragmentId = arg0.getShort(EXTRA_FRAGMENT_ID);
 		}
-		// Load the appropiate fragment depending on the ID passed in the
-		// Intent.
+		// Start energy service to save initial energy settings
+		if (!AppState.isEnergyStateSaved()) {
+			Intent intentEnergyService = new Intent(getApplicationContext(), EnergyService.class);
+			intentEnergyService.setAction(EnergyService.ACTION_GET_ENERGY_STATE);
+			startService(intentEnergyService);
+		}
+		// Load a fragment depending on the ID sent in the Intent.
 		if (isFragmentIdValid(fragmentId)) {
 			switch (fragmentId) {
 			case FRAGMENT_ALBUMS:
@@ -84,11 +101,20 @@ public class MainActivity extends FragmentActivity {
 		// If the current fragment is the list of albums we stop the service
 		// and close the activity
 		if (currentFragment == FRAGMENT_ALBUMS) {
-			// Stop Music service when back button is pressed if music is
+			// Close music player when back button is pressed if music is
 			// paused.
 			if (!playQueue.isPlaying()) {
 				Intent intent = new Intent(this, MusicService.class);
 				stopService(intent);
+				// Call the energy service to reset energy settings to the
+				// initial ones before closing
+				if (AppState.isEnergyStateSaved() && AppState.isEnergyModeEabled()) {
+					Intent intentEnergyService = new Intent(getApplicationContext(), EnergyService.class);
+					intentEnergyService.setAction(EnergyService.ACTION_SET_ENERGY_MODE);
+					intentEnergyService.putExtra(EnergyService.EXTRA_ENERGY_MODE, InitialEnergySettings.getInstance());
+					startService(intentEnergyService);
+				}
+				AppState.reset();
 			}
 			super.onBackPressed();// Close the activity
 		} else {
@@ -162,26 +188,49 @@ public class MainActivity extends FragmentActivity {
 		setTitle(getResources().getString(R.string.play_queue));
 	}
 
-	// BroadcastReceiver for managing messages from the Music Service
+	// BroadcastReceiver for managing messages from the Music Service and Energy
+	// service
 	private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 		public void onReceive(android.content.Context context, Intent intent) {
-			boolean songChanged = intent.getBooleanExtra(MusicService.SONG_CHANGED, false);
-			boolean playerStateChanged = intent.getBooleanExtra(MusicService.PLAYER_STATE_CHANGED, false);
-			FragmentEcoPlayer fragmentButtons = (FragmentEcoPlayer) fragmentManager
-					.findFragmentById(R.id.fragment_container_buttons);
-			FragmentEcoPlayer fragmentList = (FragmentEcoPlayer) fragmentManager
-					.findFragmentById(R.id.fragment_container_lists);
-			if (songChanged) {
-				if (fragmentButtons != null)
-					fragmentButtons.onSongChanged();
-				if (fragmentList != null)
-					fragmentList.onSongChanged();
-			}
-			if (playerStateChanged) {
-				if (fragmentButtons != null)
-					fragmentButtons.onMusicPlayerStateChanged();
-				if (fragmentList != null)
-					fragmentList.onMusicPlayerStateChanged();
+			// Broadcast from music service. Current song and/or player status
+			// have changed
+			if (intent.getAction().equals(MusicService.MUSIC_UPDATE)) {
+				boolean songChanged = intent.getBooleanExtra(MusicService.SONG_CHANGED, false);
+				boolean playerStateChanged = intent.getBooleanExtra(MusicService.PLAYER_STATE_CHANGED, false);
+				FragmentEcoPlayer fragmentButtons = (FragmentEcoPlayer) fragmentManager
+						.findFragmentById(R.id.fragment_container_buttons);
+				FragmentEcoPlayer fragmentList = (FragmentEcoPlayer) fragmentManager
+						.findFragmentById(R.id.fragment_container_lists);
+				if (songChanged) {
+					if (fragmentButtons != null)
+						fragmentButtons.onSongChanged();
+					if (fragmentList != null)
+						fragmentList.onSongChanged();
+				}
+				if (playerStateChanged) {
+					if (fragmentButtons != null)
+						fragmentButtons.onMusicPlayerStateChanged();
+					if (fragmentList != null)
+						fragmentList.onMusicPlayerStateChanged();
+				}
+				// Broadcast from energy service. The process of enabling an
+				// energy mode has finished
+			} else if (intent.getAction().equals(EnergyService.ENERGY_MODE_SET)) {
+				AppState.setEnergyModeEabled(true);
+				Toast.makeText(getApplicationContext(), getResources().getString(R.string.energyMode_enabled),
+						Toast.LENGTH_LONG).show();
+				// Broadcast from energy service. THe process of retrieving and
+				// saving the initial energy settings has finished.
+			} else if (intent.getAction().equals(EnergyService.ENERGY_STATE_GET)) {
+				AppState.setEnergyStateSaved(true);
+				// Set the default energy mode.
+				Intent intentEnergyService = new Intent(getApplicationContext(), EnergyService.class);
+				intentEnergyService.setAction(EnergyService.ACTION_SET_ENERGY_MODE);
+				EnergyMode em = new EnergyMode();
+				em.setCPUFrequency(800000);
+				em.setGovernor("conservative");
+				intentEnergyService.putExtra(EnergyService.EXTRA_ENERGY_MODE, em);
+				startService(intentEnergyService);
 			}
 		}
 	};

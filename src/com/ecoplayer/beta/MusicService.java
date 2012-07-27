@@ -25,13 +25,13 @@ import android.os.PowerManager;
 //Music service for playing music from a play queue. 
 //It support several commands such as start, play, next, previous, etc... 
 public class MusicService extends Service implements MediaPlayer.OnPreparedListener {
-	public static final String MUSIC_UPDATE = "com.example.musictest.MUSIC_UPDATE";
-	public static final String SONG_CHANGED = "com.example.musictest.SONG_CHANGED";
-	public static final String PLAYER_STATE_CHANGED = "com.example.musictest.PLAYER_STATE_CHANGED";
-	public static final String ACTION_PLAY = "com.example.musictest.PLAY";
-	public static final String ACTION_PAUSE = "com.example.musictest.PAUSE";
-	public static final String ACTION_NEXT = "com.example.musictest.NEXT";
-	public static final String ACTION_PREVIOUS = "com.example.musictest.PREVIOUS";
+	public static final String MUSIC_UPDATE = "com.ecoplayer.beta.MUSIC_UPDATE";
+	public static final String SONG_CHANGED = "com.ecoplayer.beta.SONG_CHANGED";
+	public static final String PLAYER_STATE_CHANGED = "com.ecoplayer.beta.PLAYER_STATE_CHANGED";
+	public static final String ACTION_PLAY = "com.ecoplayer.beta.PLAY";
+	public static final String ACTION_PAUSE = "com.ecoplayer.beta.PAUSE";
+	public static final String ACTION_NEXT = "com.ecoplayer.beta.NEXT";
+	public static final String ACTION_PREVIOUS = "com.ecoplayer.beta.PREVIOUS";
 	// If the previous song button is pressed before the song has been played
 	// for longer than MIN_TIME_GOING_PREVIOUS
 	// the player will move to the previous song instead of starting again the
