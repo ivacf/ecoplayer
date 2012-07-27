@@ -19,5 +19,8 @@
     <string name="contextMenu_addAlbum">Add album to queue</string>
     <string name="queue_full">The play queue is full</string>
     <string name="energyMode_enabled">Energy mode enabled</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="gps_message">Do you want to disable GPS to save battery?</string>
  
 </resources>

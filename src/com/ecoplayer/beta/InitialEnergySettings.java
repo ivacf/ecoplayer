@@ -14,6 +14,7 @@ public class InitialEnergySettings extends EnergyMode {
 
 	private static final long serialVersionUID = -6360485931059763404L;
 	private static InitialEnergySettings singletonRef = null;
+	private boolean isGPSOn = false;
 
 	private InitialEnergySettings() {
 		super();
@@ -24,6 +25,14 @@ public class InitialEnergySettings extends EnergyMode {
 			singletonRef = new InitialEnergySettings();
 		}
 		return singletonRef;
+	}
+
+	public boolean isGPSOn() {
+		return isGPSOn;
+	}
+
+	public void setGPSOn(boolean isGPSOn) {
+		this.isGPSOn = isGPSOn;
 	}
 
 }

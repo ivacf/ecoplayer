@@ -6,10 +6,13 @@
  */
 package com.ecoplayer.beta;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -188,6 +191,24 @@ public class MainActivity extends FragmentActivity {
 		setTitle(getResources().getString(R.string.play_queue));
 	}
 
+	// Display an alert dialog to inform when GPS is enabled and gives an option
+	// to disable it manually
+	private void showAlertMessageGps() {
+		final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(getResources().getString(R.string.gps_message)).setCancelable(false)
+				.setPositiveButton(getResources().getString(R.string.yes), new DialogInterface.OnClickListener() {
+					public void onClick(final DialogInterface dialog, final int id) {
+						startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+					}
+				}).setNegativeButton(getResources().getString(R.string.no), new DialogInterface.OnClickListener() {
+					public void onClick(final DialogInterface dialog, final int id) {
+						dialog.cancel();
+					}
+				});
+		final AlertDialog alert = builder.create();
+		alert.show();
+	}
+
 	// BroadcastReceiver for managing messages from the Music Service and Energy
 	// service
 	private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -223,6 +244,9 @@ public class MainActivity extends FragmentActivity {
 				// saving the initial energy settings has finished.
 			} else if (intent.getAction().equals(EnergyService.ENERGY_STATE_GET)) {
 				AppState.setEnergyStateSaved(true);
+				// Show GPS message if it's enabled
+				if (InitialEnergySettings.getInstance().isGPSOn())
+					showAlertMessageGps();
 				// Set the default energy mode.
 				Intent intentEnergyService = new Intent(getApplicationContext(), EnergyService.class);
 				intentEnergyService.setAction(EnergyService.ACTION_SET_ENERGY_MODE);

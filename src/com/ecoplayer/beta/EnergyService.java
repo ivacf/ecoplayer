@@ -19,6 +19,7 @@ import android.app.IntentService;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.location.LocationManager;
 import android.net.wifi.WifiManager;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -83,6 +84,7 @@ public class EnergyService extends IntentService {
 			iniEnergySettings.setAutoSyncOn(isAutoSyncOn());
 			iniEnergySettings.setBluetoothOn(isBluetoothOn());
 			iniEnergySettings.setWifiOn(isWifiOn());
+			iniEnergySettings.setGPSOn(isGPSOn());
 			iniEnergySettings.setCPUFrequency(getMaxCPUFrequency());
 			iniEnergySettings.setGovernor(getCPUGovernor());
 			// Notify the main activity
@@ -376,6 +378,12 @@ public class EnergyService extends IntentService {
 	// if auto sync is enabled returns true, if not false
 	private boolean isAutoSyncOn() {
 		return ContentResolver.getMasterSyncAutomatically();
+	}
+
+	// if GPS is enabled returns true, if not false
+	private boolean isGPSOn() {
+		final LocationManager manager = (LocationManager) getSystemService(LOCATION_SERVICE);
+		return manager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 	}
 
 	// Return the current maximum CPU frequency or -1 if something went wrong
