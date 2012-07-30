@@ -1,5 +1,6 @@
 package com.ecoplayer.beta;
 
+import java.util.Iterator;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -49,7 +50,9 @@ public class PlayQueueFragment extends Fragment implements FragmentEcoPlayer {
 	private void loadSongsOfAlbum() {
 		if (!playQueue.isEmpty()) {
 			songsArrayAdap.clear();
-			songsArrayAdap.addAll(playQueue.getCollection());
+			Iterator<Song> ite = playQueue.getCollection().iterator();
+			while (ite.hasNext())
+				songsArrayAdap.add(ite.next());
 			songsArrayAdap.notifyDataSetChanged();
 		}
 	}

@@ -12,13 +12,14 @@ import java.io.Serializable;
 public class EnergyMode implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-	private boolean wifiOn = false;
-	private boolean autoSyncOn = false;
+	public static final int NO_FREQUENCY = -1;
+	private boolean wifiOn = true;
+	private boolean autoSyncOn = true;
 	private boolean bluetoothOn = false;
 	private boolean airPlaneModeOn = false;
-	private int CPUFrequency = 0;
+	private int CPUFrequency = NO_FREQUENCY;
 	// CPU governor
-	private String governor = "ondemand";
+	private String governor = null;
 
 	public boolean isWifiOn() {
 		return wifiOn;
@@ -66,8 +67,10 @@ public class EnergyMode implements Serializable {
 	}
 
 	public void setGovernor(String governor) {
-		if (!governor.isEmpty())
-			this.governor = governor;
+		if (governor != null) {
+			if (governor.length() > 0)
+				this.governor = governor;
+		}
 	}
 
 	public String toString() {

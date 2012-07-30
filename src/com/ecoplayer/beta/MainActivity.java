@@ -11,11 +11,16 @@ import android.content.BroadcastReceiver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 //Main Activity that manages different fragment to build the UI. 
@@ -24,6 +29,7 @@ public class MainActivity extends FragmentActivity {
 	public static final String EXTRA_ALBUM = "com.ecoplayer.beta.EXTRA_ALBUM";
 	public static final String EXTRA_FRAGMENT_ID = "com.ecoplayer.beta.EXTRA_FRAGMENT_ID";
 	public static final String EXTRA_ENERGY_MODE_SAVED = "com.ecoplayer.beta.EXTRA_ENERGY_MODE_SAVED";
+	public static final String PREF_KEY_ENERGYMODE = "com.ecoplayer.beta.PREF_KEY_ENERGYMODE";
 	public static final short FRAGMENT_ALBUMS = 344;
 	public static final short FRAGMENT_SONGS_ALBUM = 345;
 	public static final short FRAGMENT_PLAY_QUEUE = 346;
@@ -36,14 +42,20 @@ public class MainActivity extends FragmentActivity {
 	private ButtonsFragment fragmentButtons = null;
 	private AlbumSongsFragment fragmentSongsAlbum = null;
 	private PlayQueueFragment fragmentPlayQueue = null;
+	private InitialEnergySettings initialEnergySettings=null;
+	// SharedPreferences object
+	private SharedPreferences preferences = null;
 	private Album album = null;
 
 	@Override
 	protected void onCreate(Bundle arg0) {
 		super.onCreate(arg0);
 		setContentView(R.layout.main);
+		// Get sharedPreferences
+		preferences = PreferenceManager.getDefaultSharedPreferences(this);
 		playQueue = PlayQueue.getInstance();
 		fragmentManager = getSupportFragmentManager();
+		initialEnergySettings = InitialEnergySettings.getInstance();
 		short fragmentId = FRAGMENT_ALBUMS;
 		// Register broadcast
 		IntentFilter intentFilter = new IntentFilter(MusicService.MUSIC_UPDATE);
@@ -114,7 +126,7 @@ public class MainActivity extends FragmentActivity {
 				if (AppState.isEnergyStateSaved() && AppState.isEnergyModeEabled()) {
 					Intent intentEnergyService = new Intent(getApplicationContext(), EnergyService.class);
 					intentEnergyService.setAction(EnergyService.ACTION_SET_ENERGY_MODE);
-					intentEnergyService.putExtra(EnergyService.EXTRA_ENERGY_MODE, InitialEnergySettings.getInstance());
+					intentEnergyService.putExtra(EnergyService.EXTRA_ENERGY_MODE, initialEnergySettings);
 					startService(intentEnergyService);
 				}
 				AppState.reset();
@@ -136,6 +148,50 @@ public class MainActivity extends FragmentActivity {
 	protected void onDestroy() {
 		unregisterReceiver(broadcastReceiver);
 		super.onDestroy();
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.activity_main, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle item selection
+		switch (item.getItemId()) {
+		case R.id.menu_energyMode:
+			// Display an alert dialog to select the energyMode
+			final String[] listEnergyModes = MainActivity.this.getResources().getStringArray(R.array.energymode_array);
+			final String[] listEnergyModesValues = MainActivity.this.getResources().getStringArray(
+					R.array.energymode_array_values);
+
+			AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+			builder.setTitle(getResources().getString(R.string.energyMode_title));
+			builder.setItems(listEnergyModes, new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int item) {
+					// Save the selected energy mode ID in the SharedPrefrences
+					// object.
+					short energyModeID = new Short(listEnergyModesValues[item]);
+					SharedPreferences.Editor editor = preferences.edit();
+					editor.putInt(PREF_KEY_ENERGYMODE, energyModeID);
+					editor.commit();
+					// Start the energy service to enable the selected energy
+					// Mode
+					EnergyMode em = buildEnergyMode(energyModeID);
+					Intent intentEnergyService = new Intent(getApplicationContext(), EnergyService.class);
+					intentEnergyService.setAction(EnergyService.ACTION_SET_ENERGY_MODE);
+					intentEnergyService.putExtra(EnergyService.EXTRA_ENERGY_MODE, em);
+					startService(intentEnergyService);
+				}
+			});
+			AlertDialog alert = builder.create();
+			alert.show();
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
 	// Add the new fragment with the play,next and previous buttons, only if the
@@ -209,6 +265,44 @@ public class MainActivity extends FragmentActivity {
 		alert.show();
 	}
 
+	// Build a energyMode object given the energyModeId.
+	private EnergyMode buildEnergyMode(int energyModeId) {
+		EnergyMode em = new EnergyMode();
+		switch (energyModeId) {
+		case 0:
+			/*
+			 * Bulding energy mode: Normal; only bluetooth off.
+			 */
+			em.setBluetoothOn(false);
+			em.setCPUFrequency(initialEnergySettings.getCPUFrequency());
+			em.setGovernor(initialEnergySettings.getGovernor());
+			break;
+		case 2:
+			/*
+			 * Bulding energy mode: EcoPlus; Max cpu: 200Mhz CPU, governor:
+			 * Conservative, Air plane mode ON (disable all connections), Auto
+			 * sync off
+			 */
+			em.setAirPlaneModeOn(true);
+			em.setAutoSyncOn(false);
+			em.setCPUFrequency(400000);
+			em.setGovernor("conservative");
+			break;
+		default:
+			/*
+			 * Bulding energy mode: Eco; Max cpu: 800Mhz CPU, governor:
+			 * Conservative, Wifi Off, Bluetooth off, Auto sync off
+			 */
+			em.setWifiOn(false);
+			em.setBluetoothOn(false);
+			em.setAutoSyncOn(false);
+			em.setCPUFrequency(800000);
+			em.setGovernor("conservative");
+
+		}
+		return em;
+	}
+
 	// BroadcastReceiver for managing messages from the Music Service and Energy
 	// service
 	private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -238,21 +332,24 @@ public class MainActivity extends FragmentActivity {
 				// energy mode has finished
 			} else if (intent.getAction().equals(EnergyService.ENERGY_MODE_SET)) {
 				AppState.setEnergyModeEabled(true);
-				Toast.makeText(getApplicationContext(), getResources().getString(R.string.energyMode_enabled),
-						Toast.LENGTH_LONG).show();
+				final String[] listEnergyModes = MainActivity.this.getResources().getStringArray(
+						R.array.energymode_array);
+				// Get the name of the energy mode currently selected
+				String energyModeName = listEnergyModes[preferences.getInt(PREF_KEY_ENERGYMODE, 1)];
+				Toast.makeText(getApplicationContext(),
+						energyModeName + " " + getResources().getString(R.string.energyMode_enabled), Toast.LENGTH_LONG)
+						.show();
 				// Broadcast from energy service. THe process of retrieving and
 				// saving the initial energy settings has finished.
 			} else if (intent.getAction().equals(EnergyService.ENERGY_STATE_GET)) {
 				AppState.setEnergyStateSaved(true);
 				// Show GPS message if it's enabled
-				if (InitialEnergySettings.getInstance().isGPSOn())
+				if (initialEnergySettings.isGPSOn())
 					showAlertMessageGps();
-				// Set the default energy mode.
+				// Call the energy service to enable the selected energy mode
+				EnergyMode em = buildEnergyMode(preferences.getInt(PREF_KEY_ENERGYMODE, 1));
 				Intent intentEnergyService = new Intent(getApplicationContext(), EnergyService.class);
 				intentEnergyService.setAction(EnergyService.ACTION_SET_ENERGY_MODE);
-				EnergyMode em = new EnergyMode();
-				em.setCPUFrequency(800000);
-				em.setGovernor("conservative");
 				intentEnergyService.putExtra(EnergyService.EXTRA_ENERGY_MODE, em);
 				startService(intentEnergyService);
 			}

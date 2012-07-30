@@ -67,8 +67,12 @@ public class EnergyService extends IntentService {
 				}
 				setAutoSynEnabled(energyMode.isAutoSyncOn());
 				setAirplaneModeOn(energyMode.isAirPlaneModeOn());
-				setCpuMaxFrequency(energyMode.getCPUFrequency());
-				setCpuGovernor(energyMode.getGovernor());
+				int maxFreq = energyMode.getCPUFrequency();
+				if (maxFreq != EnergyMode.NO_FREQUENCY)
+					setCpuMaxFrequency(maxFreq);
+				String governor = energyMode.getGovernor();
+				if (governor != null)
+					setCpuGovernor(governor);
 
 			} else {
 				Log.e(getClass().getName(), "There is not energy mode object inside the Intent object");
@@ -98,8 +102,10 @@ public class EnergyService extends IntentService {
 	// Disable Bluetooth if enabled.
 	private boolean disableBluetooth() {
 		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		if (mBluetoothAdapter.isEnabled())
-			return mBluetoothAdapter.disable();
+		if (mBluetoothAdapter != null) {
+			if (mBluetoothAdapter.isEnabled())
+				return mBluetoothAdapter.disable();
+		}
 		return true;
 	}
 
@@ -135,6 +141,7 @@ public class EnergyService extends IntentService {
 
 	// Set the maximum CPU frequency (THIS METHOD NEEDS A ROOT DEVICE TO WORK)
 	private boolean setCpuMaxFrequency(int frequency) {
+
 		try {
 			// If the frequency isn't one of the available try to choose the
 			// closest one.
@@ -143,18 +150,20 @@ public class EnergyService extends IntentService {
 				// problem comparing frequencies to those available
 				return false;
 			else {
-				Process process = Runtime.getRuntime().exec("su");
-				DataOutputStream os = new DataOutputStream(process.getOutputStream());
-				// For every CPU (core) write the max frequency in the file
-				// scaling_max_freq
-				for (int i = 0; i < getNumCPUs(); i++) {
-					os.writeBytes("echo '" + freq + "' >> /sys/devices/system/cpu/cpu" + i
-							+ "/cpufreq/scaling_max_freq\n");
+				if (freq != getMaxCPUFrequency()) {
+					Process process = Runtime.getRuntime().exec("su");
+					DataOutputStream os = new DataOutputStream(process.getOutputStream());
+					// For every CPU (core) write the max frequency in the file
+					// scaling_max_freq
+					for (int i = 0; i < getNumCPUs(); i++) {
+						os.writeBytes("echo '" + freq + "' >> /sys/devices/system/cpu/cpu" + i
+								+ "/cpufreq/scaling_max_freq\n");
+					}
+					os.writeBytes("exit\n");
+					os.flush();
+					os.close();
+					process.waitFor();
 				}
-				os.writeBytes("exit\n");
-				os.flush();
-				os.close();
-				process.waitFor();
 			}
 		} catch (Exception e) {
 			Log.e(e.getClass().getName(), e.getMessage(), e);
@@ -191,28 +200,33 @@ public class EnergyService extends IntentService {
 
 	// Set the CPU governor (THIS METHOD NEEDS A ROOT DEVICE TO WORK)
 	private boolean setCpuGovernor(String governor) {
-		if (getAvailableGovernors().contains(governor)) {
-			try {
-				Process process = Runtime.getRuntime().exec("su");
-				DataOutputStream os = new DataOutputStream(process.getOutputStream());
-				// For every CPU (core) write the governor in the
-				// scaling_governor file
-				for (int i = 0; i < getNumCPUs(); i++) {
-					os.writeBytes("echo '" + governor + "' >> /sys/devices/system/cpu/cpu" + i
-							+ "/cpufreq/scaling_governor\n");
+		List<String> availableGovernors = getAvailableGovernors();
+		if (availableGovernors != null) {
+			if (availableGovernors.contains(governor)) {
+				if (!governor.equals(getCPUGovernor())) {
+					try {
+						Process process = Runtime.getRuntime().exec("su");
+						DataOutputStream os = new DataOutputStream(process.getOutputStream());
+						// For every CPU (core) write the governor in the
+						// scaling_governor file
+						for (int i = 0; i < getNumCPUs(); i++) {
+							os.writeBytes("echo '" + governor + "' >> /sys/devices/system/cpu/cpu" + i
+									+ "/cpufreq/scaling_governor\n");
+						}
+						os.writeBytes("exit\n");
+						os.flush();
+						os.close();
+						process.waitFor();
+					} catch (Exception e) {
+						Log.e(e.getClass().getName(), e.getMessage(), e);
+						return false;
+					}
 				}
-				os.writeBytes("exit\n");
-				os.flush();
-				os.close();
-				process.waitFor();
-			} catch (Exception e) {
-				Log.e(e.getClass().getName(), e.getMessage(), e);
-				return false;
+				return true;
 			}
-			return true;
-		} else {
-			return false;
 		}
+		return false;
+
 	}
 
 	// Return the a list with the available governors. It reads them once form

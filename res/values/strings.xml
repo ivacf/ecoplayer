@@ -8,7 +8,7 @@
 
     <string name="app_name">EcoPlayer</string>
     <string name="hello_world">Hello world!</string>
-    <string name="menu_settings">Settings</string>
+    <string name="menu_energyMode">Change energy mode</string>
     <string name="title_activity_main">MusicTest</string>
     <string name="playing">Playing</string>
     <string name="paused">Pause</string>
@@ -18,9 +18,10 @@
     <string name="contextMenu_addSong">Add to queue</string>
     <string name="contextMenu_addAlbum">Add album to queue</string>
     <string name="queue_full">The play queue is full</string>
-    <string name="energyMode_enabled">Energy mode enabled</string>
+    <string name="energyMode_enabled">energy mode has been enabled</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="gps_message">Do you want to disable GPS to save battery?</string>
+    <string name="energyMode_title">Select energy mode</string>
  
 </resources>

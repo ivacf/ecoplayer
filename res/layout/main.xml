@@ -14,12 +14,14 @@
     <FrameLayout
         android:id="@+id/fragment_container_lists"
         android:layout_width="fill_parent"
+        android:background="@android:color/black"
         android:layout_height="0dip"
         android:layout_weight="1" />
 
     <FrameLayout
         android:id="@+id/fragment_container_buttons"
         android:layout_width="fill_parent"
+        android:background="@android:color/black"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom" />
 
