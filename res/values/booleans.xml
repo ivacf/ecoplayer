@@ -1,0 +1,11 @@
+<!--
+    Author     : Ivan Carballo Fernandez (icf1e11@soton.ac.uk)
+    Project	   : EcoPlayer - Battery-friendly music player for Android (MSc project at University of Southampton)
+    License	   : Copyright (C) 2012 Ivan Carballo.
+    Date       : 13-07-2012
+-->
+<resources>
+
+   <bool name="cpu_profiling">true</bool>
+ 
+</resources>
