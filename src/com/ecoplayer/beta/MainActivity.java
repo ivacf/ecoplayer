@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Debug;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
@@ -42,13 +43,14 @@ public class MainActivity extends FragmentActivity {
 	private ButtonsFragment fragmentButtons = null;
 	private AlbumSongsFragment fragmentSongsAlbum = null;
 	private PlayQueueFragment fragmentPlayQueue = null;
-	private InitialEnergySettings initialEnergySettings=null;
+	private InitialEnergySettings initialEnergySettings = null;
 	// SharedPreferences object
 	private SharedPreferences preferences = null;
 	private Album album = null;
 
 	@Override
 	protected void onCreate(Bundle arg0) {
+		Debug.startMethodTracing();
 		super.onCreate(arg0);
 		setContentView(R.layout.main);
 		// Get sharedPreferences
@@ -147,6 +149,7 @@ public class MainActivity extends FragmentActivity {
 	@Override
 	protected void onDestroy() {
 		unregisterReceiver(broadcastReceiver);
+		Debug.stopMethodTracing();
 		super.onDestroy();
 	}
 
@@ -271,15 +274,18 @@ public class MainActivity extends FragmentActivity {
 		switch (energyModeId) {
 		case 0:
 			/*
-			 * Bulding energy mode: Normal; only bluetooth off.
+			 * Building energy mode: Normal; only bluetooth off.
 			 */
 			em.setBluetoothOn(false);
+			em.setAirPlaneModeOn(initialEnergySettings.isAirPlaneModeOn());
+			em.setAutoSyncOn(initialEnergySettings.isAutoSyncOn());
+			em.setBluetoothOn(initialEnergySettings.isBluetoothOn());
 			em.setCPUFrequency(initialEnergySettings.getCPUFrequency());
 			em.setGovernor(initialEnergySettings.getGovernor());
 			break;
 		case 2:
 			/*
-			 * Bulding energy mode: EcoPlus; Max cpu: 200Mhz CPU, governor:
+			 * Building energy mode: EcoPlus; Max cpu: 200Mhz CPU, governor:
 			 * Conservative, Air plane mode ON (disable all connections), Auto
 			 * sync off
 			 */
@@ -290,7 +296,7 @@ public class MainActivity extends FragmentActivity {
 			break;
 		default:
 			/*
-			 * Bulding energy mode: Eco; Max cpu: 800Mhz CPU, governor:
+			 * Building energy mode: Eco; Max cpu: 800Mhz CPU, governor:
 			 * Conservative, Wifi Off, Bluetooth off, Auto sync off
 			 */
 			em.setWifiOn(false);

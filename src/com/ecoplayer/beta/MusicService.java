@@ -12,6 +12,7 @@ import android.util.Log;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.media.AudioManager;
@@ -50,16 +51,20 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	// Reference to the son that is been played
 	private Song songPlaying = null;
 	private NotificationManager mNotificationManager;
+	// Cpu service profiler name
+	private ComponentName cpuProfilerName = null;
+	private Intent intentCpuProfilerService;
 
 	@Override
 	public void onCreate() {
+		super.onCreate();
 		playQueue = PlayQueue.getInstance();
 		notiBuilder = new NotificationCompat.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher)
 				.setContentTitle(getResources().getString(R.string.app_name)).setContentIntent(buildPendingIntent())
 				.setContentText(getResources().getString(R.string.tap_to_play));
 		mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		isMediaPlayerInit = initMediaPlayer();
-		super.onCreate();
+		startCpuProfilerService();
 	}
 
 	// This method initialize the Media Player
@@ -87,8 +92,8 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	// paused or vice versa. If the second is true it means that a new song is
 	// starting to be payed.
 	private void sendMusicUpdateToActivity(boolean playerStateChanged, boolean song_changed) {
-		if(song_changed){
-			Log.d("SongBlue","Notified song chaged, current song "+songPlaying.getTitle());
+		if (song_changed) {
+			Log.d("SongBlue", "Notified song chaged, current song " + songPlaying.getTitle());
 		}
 		Intent intentMusicUpdate = new Intent(MUSIC_UPDATE);
 		intentMusicUpdate.putExtra(PLAYER_STATE_CHANGED, playerStateChanged);
@@ -208,6 +213,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 			mMediaPlayer.stop();
 		mMediaPlayer.release();
 		mMediaPlayer = null;
+		stopCpuProfilerService();
 		super.onDestroy();
 	}
 
@@ -227,7 +233,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 	private void resetSongPlayingRef() {
 		if (songPlaying != null) {
 			// Set flag false and set reference to the current song to null
-			Log.d("SongBlue","Reseting song "+songPlaying.getTitle());
+			Log.d("SongBlue", "Reseting song " + songPlaying.getTitle());
 			songPlaying.setPlaying(false);
 			songPlaying = null;
 		}
@@ -318,5 +324,32 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
 				intent.putExtra(MainActivity.EXTRA_FRAGMENT_ID, MainActivity.FRAGMENT_PLAY_QUEUE);
 		}
 		return PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+	}
+
+	// Starts service com.byivan.cpufrequencies.CpuProfilerService that saves
+	// logs about the time in each CPU frequency. The logs are located in
+	// <external_storage>/cpu_frequencies/time_in_state_logs_<date>.csv
+	// It's only started if R.bool.cpu_profiling is true.
+	private void startCpuProfilerService() {
+		if (getResources().getBoolean(R.bool.cpu_profiling)) {
+			// If serviceCpuName is null it means the service hasn't been
+			// started yet.
+			if (cpuProfilerName == null) {
+				String action = "com.byivan.cpufrequencies.action.PROFILING_TIME_IN_STATE";
+				intentCpuProfilerService = new Intent(action);
+				intentCpuProfilerService.addCategory("com.byivan.cpufrequencies.category.DEFAULT");
+				cpuProfilerName = startService(intentCpuProfilerService);
+				if (cpuProfilerName == null)
+					Log.e(getClass().getName(), "Service for action=" + action + " cannot be started");
+				else
+					Log.i(getClass().getName(), "Service " + cpuProfilerName.getClassName() + " has been started");
+			}
+		}
+	}
+
+	// Stops service com.byivan.cpufrequencies.CpuProfilerService if enabled
+	private void stopCpuProfilerService() {
+		if (cpuProfilerName != null && intentCpuProfilerService != null)
+			stopService(intentCpuProfilerService);
 	}
 }
